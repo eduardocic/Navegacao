@@ -1,0 +1,8 @@
+{
+    "configuration": "cpu=atmega328",
+    "board": "arduino:avr:nano",
+    "port": "/dev/ttyUSB0",
+    "sketch": "Aduino.ino",
+    "programmer": "avrispmkii",
+    "output": "../Arduino"
+}

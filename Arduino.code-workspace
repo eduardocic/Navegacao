@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"name": "Arduino",
+			"path": "Arduino"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"interface.h": "c",
+			"mpu6050.h": "c",
+			"mpu6050.C": "cpp"
+		}
+	}
+}
