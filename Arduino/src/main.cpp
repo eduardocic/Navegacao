@@ -32,10 +32,6 @@ void printEngData(MPU6050_t *mpu6050);
 // ====================
 MPU6050_t mpu6050; 
 
-static float bias_z = 0.0;
-int cont = 0;
-
-
 void setup() {
   Serial.begin(9600);
 
@@ -69,14 +65,11 @@ void loop() {
   /* Processa os dados e os transforma em dados de engenharia */
   engData(&mpu6050);
 
-
-  cont++;
-  bias_z = bias_z * (cont - 1) + mpu6050.az.pdata;
-  bias_z /= cont;
-
-  Serial.print(mpu6050.az.pdata);
+  Serial.print(mpu6050.ax.pdata);
   Serial.print(" ");
-  Serial.println(bias_z);
+  Serial.print(mpu6050.ay.pdata);
+  Serial.print(" ");
+  Serial.println(mpu6050.az.pdata);
   delay(100);
 }
 
