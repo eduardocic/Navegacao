@@ -20,9 +20,7 @@ extern "C" {
 /* Protótipo de funções
 / ====================== */
 void display(matrix *A);
-void getRawData(MPU6050_t *mpu6050);
-void printRawData(MPU6050_t *mpu6050);
-void printEngData(MPU6050_t *mpu6050);
+void getC2Data(MPU6050_t *mpu6050);
 
 
 // ====================
@@ -35,19 +33,24 @@ MPU6050_t mpu6050;
 void setup() {
   Serial.begin(9600);
 
-  // Inicializa o MPU6050
+  /* Inicializa o MPU6050 */ 
   Wire.beginTransmission(MPU6050);
   Wire.write(0x6B);
   Wire.write(0); 
   Wire.endTransmission(true);
 
+
+  /*======================================================== */
   /* Inicializa os parâmetros das constantes multiplicativas */
   mpu6050.ax.k_fs = kAccel[0] * g;
   mpu6050.ay.k_fs = kAccel[0] * g;
   mpu6050.az.k_fs = kAccel[0] * g;
-  mpu6050.gx.k_fs = kGyro[0];
-  mpu6050.gy.k_fs = kGyro[0];
-  mpu6050.gz.k_fs = kGyro[0];
+
+  /* Inicializa o bias */
+  mpu6050.ax.bias = -0.6449172520;
+  mpu6050.ay.bias =  0.3271865289;
+  mpu6050.az.bias =  0.6571711751;
+  /*======================================================== */
 }
 
 
@@ -60,36 +63,25 @@ void setup() {
 void loop() {
 
   /* Coleta os dados pela I2C */ 
+  getC2Data(&mpu6050);
   getRawData(&mpu6050);
+  getProcessedData(&mpu6050);
 
-  /* Processa os dados e os transforma em dados de engenharia */
-  engData(&mpu6050);
-
-  Serial.print(mpu6050.ax.pdata);
+  Serial.print(mpu6050.ax.pdata, 8);
   Serial.print(" ");
-  Serial.print(mpu6050.ay.pdata);
+  Serial.print(mpu6050.ay.pdata, 8);
   Serial.print(" ");
-  Serial.println(mpu6050.az.pdata);
-  delay(100);
+  Serial.println(mpu6050.az.pdata, 8);
+  delay(50);
 }
 
 
 
 
-
-
-
-
-
-
-
-
-
-// Rotinas implementadas
-// ======================
+/* Rotinas implementadas */
 void display(matrix *A){
     for (int i = 0 ; i < A->lines ; i++){
-        Serial.print("|  ");        
+        Serial.print("|  ");
         for (int j = 0 ; j < A->columns ; j++){
             Serial.print(get(A, i, j));
         }
@@ -97,44 +89,22 @@ void display(matrix *A){
     }
 }
 
-void getRawData(MPU6050_t *mpu6050){
-  // Soliticação de dados do MPU6050, iniciando a partir do enderenço do
-  // registrador do acelerômetro de medida x.
+void getC2Data(MPU6050_t *mpu6050){
+
+  /* Solicita o dispositivo e registrador a partir de onde virão os dados */
   Wire.beginTransmission(MPU6050);
   Wire.write(ACCEL_XOUT_H);
   Wire.endTransmission(false);
 
-  Wire.requestFrom(MPU6050, 14, true);  
-  
-  mpu6050->ax.rdata    = Wire.read()<<8 | Wire.read();  // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)     
-  mpu6050->ay.rdata    = Wire.read()<<8 | Wire.read();  // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
-  mpu6050->az.rdata    = Wire.read()<<8 | Wire.read();  // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
-  mpu6050->temp.rdata  = Wire.read()<<8 | Wire.read();  // 0x41   (TEMP_OUT_H) & 0x42   (TEMP_OUT_L)
-  mpu6050->gx.rdata    = Wire.read()<<8 | Wire.read();  // 0x43  (GYRO_XOUT_H) & 0x44  (GYRO_XOUT_L)
-  mpu6050->gy.rdata    = Wire.read()<<8 | Wire.read();  // 0x45  (GYRO_YOUT_H) & 0x46  (GYRO_YOUT_L)
-  mpu6050->gz.rdata    = Wire.read()<<8 | Wire.read();  // 0x47  (GYRO_ZOUT_H) & 0x48  (GYRO_ZOUT_L)
-}
+  /* Solicita a leitura de 'X' bytes */
+  Wire.requestFrom(MPU6050, 6, true); 
 
-
-void printEngData(MPU6050_t *mpu6050){
-  // Coloca os parâmetros no SI. 
-  Serial.print("aX = ");    Serial.print(mpu6050->ax.pdata);
-  Serial.print(" | aY = "); Serial.print(mpu6050->ay.pdata);
-  Serial.print(" | aZ = "); Serial.print(mpu6050->az.pdata);
-  Serial.print(" | gX = "); Serial.print(mpu6050->gx.pdata);
-  Serial.print(" | gY = "); Serial.print(mpu6050->gy.pdata);
-  Serial.print(" | gZ = "); Serial.print(mpu6050->gz.pdata);
-  Serial.print(" | T = ");  Serial.println(mpu6050->temp.pdata);
-}
-
-
-void printRawData(MPU6050_t *mpu6050){
-  // Coloca os parâmetros no SI. 
-  Serial.print("aX = ");    Serial.print(mpu6050->ax.rdata);
-  Serial.print(" | aY = "); Serial.print(mpu6050->ay.rdata);
-  Serial.print(" | aZ = "); Serial.print(mpu6050->az.rdata);
-  Serial.print(" | gX = "); Serial.print(mpu6050->gx.rdata);
-  Serial.print(" | gY = "); Serial.print(mpu6050->gy.rdata);
-  Serial.print(" | gZ = "); Serial.print(mpu6050->gz.rdata);
-  Serial.print(" | T = ");  Serial.println(mpu6050->temp.rdata);
+  /* Ler e concatena os dados no formato leitura, sem nenhum tipo de processamento (rdata) */
+  mpu6050->ax.c2data    = Wire.read()<<8 | Wire.read();
+  mpu6050->ay.c2data    = Wire.read()<<8 | Wire.read();
+  mpu6050->az.c2data    = Wire.read()<<8 | Wire.read();
+  // mpu6050->temp.c2data  = Wire.read()<<8 | Wire.read();
+  // mpu6050->gx.c2data    = Wire.read()<<8 | Wire.read();
+  // mpu6050->gy.c2data    = Wire.read()<<8 | Wire.read();
+  // mpu6050->gz.c2data    = Wire.read()<<8 | Wire.read();
 }

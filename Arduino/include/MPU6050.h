@@ -33,28 +33,31 @@ const int MPU6050 = 0x68;
 
 /* Estrutura de dados individuais */
 typedef struct{
-  int     rdata;    /* raw data       */
-  float   pdata;    /* processed data */
-  float   bias;     /* Vamos ver se vai */
-  float   k_fs;     /* constante do ACCEL FULL SCALE */
+  int      c2data;   /* c2 data   */
+  double   rdata;    /* raw data  */
+  double   bias;     /* bias      */
+  double   pdata;    /* processed data                */
+  double   k_fs;     /* constante do ACCEL FULL SCALE */
 } ACCEL_t;
 
 typedef struct{
-  int     rdata;    /* raw data       */
-  float   pdata;    /* processed data */
-  float   k_fs;     /* constante do GYRO FULL SCALE */
+  int      c2data;   /* c2 data   */
+  double   rdata;    /* raw       */
+  double   bias;     /* bias      */
+  double   pdata;    /* processed data                */
+  double   k_fs;     /* constante do GYRO FULL SCALE */
 } GYRO_t;
 
 typedef struct{
-  int     rdata;    /* raw data       */
-  float   pdata;    /* processed data */
+  int      c2data;   /* complemento 2                */
+  double   pdata;    /* processed data               */
 } TEMP_t;
 
 /* Estrutura de dados condensadas */
 typedef struct {
   ACCEL_t ax, ay, az;
-  GYRO_t  gx, gy, gz;
-  TEMP_t  temp;
+  // GYRO_t  gx, gy, gz;
+  // TEMP_t  temp;
 } MPU6050_t;
 
 /* (*) No MPU6050, as medidas de aceleração e de rotação são coletadas de 
@@ -120,14 +123,29 @@ typedef struct {
  *    3.  [ -8g,  +8g] ------------> k =  16g/65536 = g * 0.00024414;
  *    4.  [-16g, +16g] ------------> k =  32g/65536 = g * 0.00048828;
  */
-const double kGyro[4]  = {0.00762951, 0.01525879, 0.03051758, 0.06103515};
-const double kAccel[4] = {0.00006104, 0.00012207, 0.00024414, 0.00048828};
+
+const double kAccel[]  = {0.00006104,     0.00012207,     0.00024414, 0.00048828};
+// enum FS_ACC { mm2g  = 0, 
+//               mm4g  = 1, 
+//               mm8g  = 2, 
+//               mm16g = 3}; /* O 'mm' é para simbolizar o 'mais ou menos' */
+
+const double dx[] = {1.0017053605,   0.0045963109,   0.0031082230,   0.0001341552};
+const double dy[] = {1.0043009256,  -0.0075904210,  -0.0034263600,   0.0002361725};
+const double dz[] = {0.9813303299,   0.0057193400,  -0.0021711114,  -0.0005080795};
+
+
+
+// ============================================================================
+// Deve ser iniciado depois
+// 
+// const double kGyro[4]  = {0.00762951, 0.01525879, 0.03051758, 0.06103515};
+// ============================================================================
 
 
 /* Protótipos de funções */
-void engData(MPU6050_t *mpu6050);
-
-
+void getRawData(MPU6050_t *mpu6050);
+void getProcessedData(MPU6050_t *mpu6050);
 
 #endif
 
